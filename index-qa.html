@@ -1,89 +1,152 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 	<meta charset="UTF-8">
 	<title>Simple Test Page for UDS Client</title>
-	<!--<script src="dist/mycars-client-api.js"></script>-->
+
+	<!-- <script id="myCarsClientScript" src="https://uds-local.dealer.com/dist/mycars-client-api.js"></script> -->
+	<!--<script id="myCarsClientScript" src="https://uds.dev.int.dealer.com/mycars-client-api.js"></script>-->
 	<script id="myCarsClientScript" src="https://uds.qa.int.dealer.com/mycars-client-api.js"></script>
-	<!--<script src="https://uds.dealer.com/mycars-client-api.js"></script>-->
-	<style type="text/css">
-	.funky{
-	
-		animation: translate 0.75s infinite;
-  		animation-direction: alternate;
-	}
-	@keyframes translate {
-	  0% {
-	    
-	    transform: translateY(10px);
-	  }
-	  100% {
-	   
-	    transform: translateY(-10px);
-	  }
-	}
-
-	body {
-		text-align: center;
-		background: url('https://www.planwallpaper.com/static/images/Alien_Ink_2560X1600_Abstract_Background_1.jpg');
-	}
-
-	#container {
-		transform: translateY(50%);
-	}
-
-	#message{
-		font-size: 25px; 
-		color: white;
-	}
-	button {
-		background: linear-gradient(#3d85c6, #073763);
-		border-radius: 5px;
-		border-top: 15px;
-		color: #fff;
-		display: inline-block;
-		padding: 8px 20px;
-		font-size: 16px;
-		text-align: center;
-		border: none;
-	}
-
-
+	<!--<script id="myCarsClientScript" src="https://uds.dealer.com/mycars-client-api.js"></script>-->
+	<style>
+		.tools {
+			padding: 20px;
+		}
+		.tools div {
+			display: inline-block;
+			width: 100px;
+			height: 100px;
+			border: 1px solid black;
+			color: white;
+		}
+		.tools div.true {
+			background: green;
+		}
+		.tools div.false {
+			background: red;
+		}
 	</style>
-</head>
-<body>
 
-<div id="container">
-	<h1 class="funky">QA</h1>
+</head>
+
+<body>
 	<h1>MyCars Iframe Test Page</h1>
-	<p id="message">
-		
-	</p>
-</div>
-	
+	<p id="generalMessage"></p>
+	<p id="userLoginMessage"></p>
+	<code id="userProfileMessage"></code>
+	<div class="tools">
+		<div id="trade-tool">
+			<input type="button" value="saveTrade" onclick="saveTradeData()">
+		</div>
+		<div id="prequal-tool">
+			<input type="button" value="savePrequal" onclick="savePrequalData()">
+		</div>
+		<div id="payment-tool">
+			<input type="button" value="savePayment" onclick="savePaymentData()">
+		</div>
+		<div id="credit-tool">
+			<input type="button" value="saveCredit" onclick="saveCreditData()">
+		</div>
+		<div id="reserve-tool">
+			<input type="button" value="saveReserve" disabled="">
+		</div>
+		<div id="protect-tool">
+			<input type="button" value="saveProtect" onclick="saveProtectData()">
+		</div>
+	</div>
 	<script type="text/javascript">
+		var mostRecentUserProfile = null;
+
 		function onUserLoginStatusReceived(isLoggedIn) {
-			var status = isLoggedIn.toString().toUpperCase();
-			document.getElementById('message').innerHTML = "User is logged in " +  status
+			document.getElementById('userLoginMessage').innerHTML = "User is logged in " + isLoggedIn;
+
 			if (!isLoggedIn && !document.getElementById('login')) {
 				var btn = document.createElement("button");
 				var t = document.createTextNode("Login");
 				btn.setAttribute("id", "login");
 				btn.appendChild(t);
-				document.getElementById('container').appendChild(btn);
+				document.getElementById("userLoginMessage").appendChild(btn);
+
 				btn.onclick = function() {
 					DDC.MyCars.CLIENT_API.promptUserLogin();
 				};
 			}
 		}
-		if (typeof DDC == "undefined" || typeof DDC.MyCars == "undefined" || typeof DDC.MyCars.CLIENT_API == "undefined") {
-			var apiSource = document.getElementById("myCarsClientScript").src
-			document.getElementById('message').innerHTML = "MyCars API not loaded.  You may need to accept the certificate from <a href=\"" + apiSource+ "\">" + apiSource + "</a>";
+
+		function onUserProfileReceived(userProfile) {
+			document.getElementById('userProfileMessage').innerHTML = "User profile:<br>" + JSON.stringify(userProfile);
+
+			document.getElementById('trade-tool').classList.remove(!userProfile.isTradeComplete());
+			document.getElementById('trade-tool').classList.add(userProfile.isTradeComplete());
+			document.getElementById('prequal-tool').classList.remove(!userProfile.isPrequalComplete());
+			document.getElementById('prequal-tool').classList.add(userProfile.isPrequalComplete());
+			document.getElementById('payment-tool').classList.remove(!userProfile.isPaymentComplete());
+			document.getElementById('payment-tool').classList.add(userProfile.isPaymentComplete());
+			document.getElementById('credit-tool').classList.remove(!userProfile.isCreditComplete());
+			document.getElementById('credit-tool').classList.add(userProfile.isCreditComplete());
+			document.getElementById('reserve-tool').classList.remove(!userProfile.isReserveComplete());
+			document.getElementById('reserve-tool').classList.add(userProfile.isReserveComplete());
+			document.getElementById('protect-tool').classList.remove(!userProfile.isProtectComplete());
+			document.getElementById('protect-tool').classList.add(userProfile.isProtectComplete());
+
+			// store the most recently received userProfile object
+			mostRecentUserProfile = userProfile;
 		}
-		else {
+
+		if (typeof DDC == "undefined" || typeof DDC.MyCars == "undefined" || typeof DDC.MyCars.CLIENT_API == "undefined") {
+			var apiSource = document.getElementById("myCarsClientScript").src;
+			document.getElementById('generalMessage').innerHTML = "MyCars API not loaded.  You may need to accept the certificate from <a href=\"" + apiSource+ "\">" + apiSource + "</a>";
+		} else {
 			DDC.MyCars.CLIENT_API.addUserLoginStatusListener(onUserLoginStatusReceived);
+			DDC.MyCars.CLIENT_API.addUserProfileListener(onUserProfileReceived);
+		}
+
+		function saveTradeData(){
+			var clientTradeData={"leadReferenceId":"12345","amountOwed":12345,"make":"Nissan","offer":1232,"model":"Maxima","serie":"","style":"SE Sedan 4D","year":"2014"};
+			if (mostRecentUserProfile === null) {
+				alert("User profile has not been received yet");
+			} else {
+				mostRecentUserProfile.saveTrade(clientTradeData, function(status, text) { console.log("callback received result of saveTradeData status:" + status + " text:" + text); });
+			}
+		}
+
+		function saveCreditData(){
+			var data={"leadReferenceId":"12345","complete":true,"approved":"pending","referenceNumber":"160000000007216789"};
+			if (mostRecentUserProfile === null) {
+				alert("User profile has not been received yet");
+			} else {
+				mostRecentUserProfile.saveCredit(data, function(status, text) { console.log("callback received result of saveCreditData status:" + status + " text:" + text); });
+			}
+		}
+
+		function savePrequalData(){
+			var data={"leadReferenceId":"12345","approved":"pending","referenceNumber":"160000000115767419"};
+			if (mostRecentUserProfile === null) {
+				alert("User profile has not been received yet");
+			} else {
+				mostRecentUserProfile.savePrequal(data, function(status, text) { console.log("callback received result of savePrequalData status:" + status + " text:" + text); });
+			}
+		}
+
+		function savePaymentData(){
+			var data={"leadReferenceId":"12345","apr":"4.99","payment":"435.65","term":"72","type":"lease","annualMiles":"12000"};
+			if (mostRecentUserProfile === null) {
+				alert("User profile has not been received yet");
+			} else {
+				mostRecentUserProfile.savePayment(data, function(status, text) { console.log("callback received result of savePaymentData status:" + status + " text:" + text); });
+			}
+		}
+
+		function saveProtectData(){
+			var data={"leadReferenceId":"12345","protectDecision":"false"};
+			if (mostRecentUserProfile === null) {
+				alert("User profile has not been received yet");
+			} else {
+				mostRecentUserProfile.saveProtect(data, function(status, text) { console.log("callback received result of saveProtectData status:" + status + " text:" + text); });
+			}
 		}
 	</script>
 </body>
-</html>
 
+</html>
