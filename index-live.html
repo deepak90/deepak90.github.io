@@ -4,6 +4,13 @@
 <head>
 	<meta charset="UTF-8">
 	<title>Simple Test Page for UDS Client</title>
+
+	<script type="text/javascript">
+		var DEFAULT_CLIENT_VERSION="1.0.0";
+		var DEFAULT_CLIENT_ENV="live";
+	</script>
+	<script id="myCarsClientScript" src="testing-helper.js"></script>
+
 	<style>
 		.tools {
 			padding: 20px;
@@ -51,40 +58,12 @@
 	</div>
 </div>
 <script type="text/javascript">
-	var DEFAULT_CLIENT_VERSION="1.0.0";
-	var DEFAULT_CLIENT_ENV="live";
-	var CLIENT_VERSION_COOKIE_NAME="clientVersion";
-	var CLIENT_ENV_COOKIE_NAME="clientEnvironment";
-
-	var API_ENV={
-		"local":"https://uds-local.dealer.com/dist/",
-		"qa":"https://uds.qa.int.dealer.com/",
-		"dev":"https://uds.dev.int.dealer.com/",
-		"live":"https://uds.dealer.com/"
-	}
 
 	var mostRecentUserProfile = null;
 
-
-	var client=getClientObj();
-
-
-	var clientApiSrc=createClientScript(client,checkload);
-
-	document.write("My cars Client Api Version:"+client.clientVersion.fontcolor("red"));
-	document.write("<br>")
-	document.write("My cars Client Api Environment:"+client.clientEnvironment.toUpperCase().fontcolor("red"));
-	document.write("<br>")
-	document.write("My cars Client API URL:"+clientApiSrc.fontcolor("red"));
-
-	function checkload() {
-		if (typeof DDC == "undefined" || typeof DDC.MyCars == "undefined" || typeof DDC.MyCars.CLIENT_API == "undefined") {
-			var apiSource = document.getElementById("myCarsClientScript").src;
-			document.getElementById('generalMessage').innerHTML = "MyCars API not loaded.  You may need to accept the certificate from <a href=\"" + apiSource + "\">" + apiSource + "</a>";
-		} else {
-			DDC.MyCars.CLIENT_API.addUserLoginStatusListener(onUserLoginStatusReceived);
-			DDC.MyCars.CLIENT_API.addUserProfileListener(onUserProfileReceived);
-		}
+	function clientApiLoaded() {
+		DDC.MyCars.CLIENT_API.addUserLoginStatusListener(onUserLoginStatusReceived);
+		DDC.MyCars.CLIENT_API.addUserProfileListener(onUserProfileReceived);
 	}
 	function onUserLoginStatusReceived(isLoggedIn) {
 		document.getElementById('userLoginMessage').innerHTML = "User is logged in " + isLoggedIn;
@@ -121,8 +100,6 @@
 		// store the most recently received userProfile object
 		mostRecentUserProfile = userProfile;
 	}
-
-
 
 	function saveTradeData(){
 		var clientTradeData={"leadReferenceId":"12345","amountOwed":12345,"make":"Nissan","offer":1232,"model":"Maxima","serie":"","style":"SE Sedan 4D","year":"2014"};
@@ -167,74 +144,6 @@
 		} else {
 			mostRecentUserProfile.saveProtect(data, function(status, text) { console.log("callback received result of saveProtectData status:" + status + " text:" + text); });
 		}
-	}
-
-
-	//get browser cookie's value
-	function getCookie(cname) {
-		var name = cname + "=";
-		var decodedCookie = decodeURIComponent(document.cookie);
-		var ca = decodedCookie.split(';');
-		for(var i = 0; i <ca.length; i++) {
-			var c = ca[i];
-			while (c.charAt(0) == ' ') {
-				c = c.substring(1);
-			}
-			if (c.indexOf(name) == 0) {
-				return c.substring(name.length, c.length);
-			}
-		}
-		return "";
-	}
-
-	function checkClientVersionCookieValue(clientVersion){
-		var clientVersionReg = RegExp("^\\d+(\\.\\d+\\.\\d+)?$");
-		return clientVersionReg.test(clientVersion);
-	}
-
-
-	function getClientVersion(){
-		var clientVersion=getCookie(CLIENT_VERSION_COOKIE_NAME);
-		if(clientVersion.length==0||!checkClientVersionCookieValue(clientVersion)){
-			clientVersion=DEFAULT_CLIENT_VERSION;
-		}
-		return clientVersion;
-	}
-
-
-
-	function getClientObj(){
-		var clientVersion=getClientVersion();
-
-		var clientEnvCookieValue = getCookie(CLIENT_ENV_COOKIE_NAME).toLowerCase();
-		var clientUrl;
-
-		if (clientEnvCookieValue) {
-			clientUrl = API_ENV[clientEnvCookieValue];
-		}
-
-		if (!clientUrl) {
-			clientEnvCookieValue=DEFAULT_CLIENT_ENV;
-			clientUrl=API_ENV[clientEnvCookieValue];
-		}
-
-		var client={
-			clientVersion:clientVersion,
-			clientEnvironment:clientEnvCookieValue,
-			clientUrl:clientUrl
-		}
-
-		return client;
-
-	}
-
-	function createClientScript(client,callback){
-		var clientScript=document.createElement("script");
-		clientScript.setAttribute("id","myCarsClientScript");
-		clientScript.setAttribute("src",client.clientUrl.concat("mycars-client-api-").concat(client.clientVersion).concat(".js"));
-		document.querySelector("head").appendChild(clientScript);
-		window.addEventListener("load",function(){callback()})
-		return clientScript.src;
 	}
 
 </script>
