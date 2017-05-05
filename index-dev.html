@@ -57,10 +57,21 @@
 		<input type="button" value="saveProtect" onclick="saveProtectData()">
 	</div>
 </div>
+
+<div class="drTabSwitch">
+	<input id="tradeButton" value="Switch To Trade Tab" type="button" onClick="sendTabInfoToClient('trade')">
+	<input id="paymentButton" value="Switch To Payments Tab" type="button" onClick="sendTabInfoToClient('payment')">
+	<input id="prequalButton" value="Switch To Prequalify Tab" type="button" onClick="sendTabInfoToClient('prequal')">
+	<input id="reserveButton" value="Switch To Reserve Tab" type="button" onClick="sendTabInfoToClient('reserve')">
+	<input id="protectButton" value="Switch To Protection Select Tab" type="button" onClick="sendTabInfoToClient('protect')">
+</div>
+
+
 <script type="text/javascript">
 
 	var mostRecentUserProfile = null;
 
+	// this only needs to be in a function if the script is loaded asynchronously
 	function clientApiLoaded() {
 		DDC.MyCars.CLIENT_API.addUserLoginStatusListener(onUserLoginStatusReceived);
 		DDC.MyCars.CLIENT_API.addUserProfileListener(onUserProfileReceived);
