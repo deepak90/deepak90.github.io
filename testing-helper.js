@@ -9,21 +9,21 @@ var API_ENV={
 }
 
 var client=getClientObj();
+var clientApiSrc = createClientScript(client, onLoad);
 
-var clientApiSrc=createClientScript(client, checkLoad);
-
-document.write("My cars Client Api Version:"+client.clientVersion.fontcolor("red"));
-document.write("<br>")
-document.write("My cars Client Api Environment:"+client.clientEnvironment.toUpperCase().fontcolor("red"));
-document.write("<br>")
-document.write("My cars Client API URL:"+clientApiSrc.fontcolor("red"));
-
-function checkLoad() {
+function onLoad() {
 	if (typeof DDC == "undefined" || typeof DDC.MyCars == "undefined" || typeof DDC.MyCars.CLIENT_API == "undefined") {
-		var apiSource = document.getElementById("myCarsClientScript").src;
-		document.getElementById('generalMessage').innerHTML = "MyCars API not loaded.  You may need to accept the certificate from <a href=\"" + apiSource + "\">" + apiSource + "</a>";
+		document.getElementById('generalMessage').innerHTML = "MyCars API not loaded.  You may need to accept the certificate from <a href=\"" + clientApiSrc + "\">" + clientApiSrc + "</a>";
 	} else {
-		// TODO: maybe find a better way to do this in the asynchronous loading story
+
+		var div = document.createElement('div');
+		html = "My cars Client Api Version: " + client.clientVersion.fontcolor("red") + "<br>";
+		html += "My cars Client Api Environment: " + client.clientEnvironment.toUpperCase().fontcolor("red") + "<br>";
+		html += "My cars Client API URL: " + clientApiSrc.fontcolor("red") + "<br>";
+		div.innerHTML = html;
+		document.body.appendChild(div);
+
+		// this calls back over to the index-local html file, to separate our test harness from code that an actual client would use
 		clientApiLoaded();
 	}
 }
@@ -70,8 +70,10 @@ function createClientScript(client, callback){
 	var clientScript=document.createElement("script");
 	clientScript.setAttribute("id","myCarsClientScript");
 	clientScript.setAttribute("src",client.clientUrl.concat("mycars-client-api-").concat(client.clientVersion).concat(".js"));
+	clientScript.setAttribute("async", true);
 	document.querySelector("head").appendChild(clientScript);
-	window.addEventListener("load",function(){callback()})
+	clientScript.addEventListener("load",function(){callback()})
+	clientScript.addEventListener("error",function(){callback()})
 	return clientScript.src;
 }
 
